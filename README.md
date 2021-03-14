@@ -9,7 +9,7 @@ Switch denon input to the right thing when sonos starts playing
 ### Installation
 
 ``` 
-git clone https://github.com/davidzholland/sonos-denon.git
+git clone https://github.com/emmanuelmiranda/sonos-denon.git
 cd sonos-denon
 npm install
 ```

@@ -1,0 +1,27 @@
+{
+  "name": "sonos-denon",
+  "version": "0.1.0",
+  "description": "Switch denon input to the right thing when sonos starts playing",
+  "main": "switchAvrOnSonosPlay.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmanuelmiranda/sonos-denon.git"
+  },
+  "keywords": [
+    "sonos",
+    "denon"
+  ],
+  "author": "David Holland",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/emmanuelmiranda/sonos-denon/issues"
+  },
+  "homepage": "https://github.com/emmanuelmiranda/sonos-denon#readme",
+  "devDependencies": {
+    "denon-avr": "0.0.5",
+    "sonos": "^0.14.1"
+  }
+}

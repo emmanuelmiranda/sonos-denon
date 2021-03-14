@@ -1,14 +1,22 @@
-var Sonos = require('../sonos/').Sonos
-var Denon = require('../denon-avr/')
+var Sonos = require('./node_modules/sonos/').Sonos
+var Denon = require('./node_modules/denon-avr/')
 
-var sonos = new Sonos(process.env.SONOS_HOST || '192.168.1.16', process.env.SONOS_PORT || 1400)
+var sonos = new Sonos(process.env.SONOS_HOST || '192.168.1.16', process.env.SONOS_PORT || 1400);
+var denonHost = process.env.DENON_HOST;
+
+var sonosAvrSource = process.env.SONOS_AVR_SOURCE || "MPLAY";
+var sonosAvrInputMode = process.env.SONOS_AVR_INPUT || "AUTO";
+var interval = process.env.INTERVAL || 5000;
 
 var currentAvrSource = null;
 var currentAvrInputMode = null;
 
+var originalAvrSource = null;
+var originalAvrInputMode = null;
+
 var avr = new Denon(new Denon.transports.telnet({
-  host: '192.168.1.101',     // IP address or hostname 
-  debug: false   // Debug enabled 
+    host: denonHost,     // IP address or hostname
+    debug: false   // Debug enabled
 }));
 
 avr.connect();
@@ -26,12 +34,12 @@ function beginLoop()
   {
     getAvrInputMode(function(){
       sonos.getCurrentState(getCurrentSonosStateCallback);
-        setTimeout(beginLoop,1000);
+        setTimeout(beginLoop, interval);
     });
   });
-  
-  
-  
+
+
+
 
 }
 
@@ -44,6 +52,7 @@ function getAvrInputMode(callback)
    {
     currentAvrInputMode = Source;
     console.log("Current input mod", currentAvrInputMode);
+    if (null === originalAvrInputMode) originalAvrInputMode = Source;
    }
    if(callback!=null)
    {
@@ -61,6 +70,7 @@ function getAvrState(callback)
     if(err==null)
     {
       currentAvrSource = currentSource;
+      if (null === originalAvrSource) originalAvrSource = currentSource;
     }
     console.log("Current Source", currentAvrSource);
     if(callback!=null)
@@ -77,22 +87,30 @@ function getCurrentSonosStateCallback(err,track)
   console.log("Current Sonos state: "+track);
   if(track=="playing")
   {
-    if(currentAvrInputMode == "AUTO")
+    if ( !isAvrInput(sonosAvrInputMode) || !isAvrSource(sonosAvrSource))
     {
-      console.log("playing, switching to sonos");
-      SetInputToSonos();
+      playSonosOnAVR();
     }
   }
   else
   {
-    if(currentAvrInputMode != "AUTO")
+    if ( !isAvrInput(originalAvrInputMode) || !isAvrSource(originalAvrSource))
     {
-      console.log("not playing, swithing away from sonos");
-      SetInputToNotSonos(getCurrentSonosStateCallback);
+      SetInputBackToOriginal(getCurrentSonosStateCallback);
     }
   }
 }
 
+
+function isAvrSource(source)
+{
+    return currentAvrSource == source;
+}
+
+function isAvrInput(input)
+{
+    return currentAvrInputMode == input || currentAvrInputMode == "AUTO";
+}
 
 
 function callback(myparam,param2,param3)
@@ -102,23 +120,20 @@ function callback(myparam,param2,param3)
 }
 
 
-function SetInputToSonos()
-{
-  var targetInputCommandMode = "SDDIGITAL" //xbox
-
-  if(currentAvrSource == null || currentAvrSource == "SAT/CBL")
-  {
-    targetInputCommandMode = "SDANALOG"
-  }
-
-  avr.send(targetInputCommandMode,callback, "Unable to switch input to digital");
+function playSonosOnAVR() {
+    console.log("playing, switching to sonos");
+    var inputModeCommand = toAvrInputMode(sonosAvrInputMode);
+    var sourceCommand = toAvrSource(sonosAvrSource);
+    avr.send(inputModeCommand, callback, "Unable to switch input to digital");
+    avr.send(sourceCommand, callback, "Unable to switch input to digital");
 }
 
 
-function SetInputToNotSonos()
-{
-  console.log("currentSource",currentAvrSource);
-  avr.send("SDAUTO",callback, "mistery");
+function SetInputBackToOriginal() {
+    var inputModeCommand = toAvrInputMode(originalAvrInputMode);
+    var sourceCommand = toAvrSource(originalAvrSource);
+    avr.send(inputModeCommand, callback, "Unable to switch input to digital");
+    avr.send(sourceCommand, callback, "Unable to switch input to digital");
 }
 
 
@@ -126,4 +141,15 @@ function SetInputToPC()
 {
 avr.send("SISAT/CBL",callback, "Unable to switch input to digital");
 avr.send("SDAUTO",callback, "Unable to switch input to digital");
+}
+
+
+function toAvrInputMode(inputMode)
+{
+    return "SD" + inputMode;
+}
+
+function toAvrSource(source)
+{
+    return "SI" + source;
 }

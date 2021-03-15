@@ -1,10 +1,10 @@
 var Sonos = require('./node_modules/sonos/').Sonos
 var Denon = require('./node_modules/denon-avr/')
 
-var sonos = new Sonos(process.env.SONOS_HOST || '192.168.1.16', process.env.SONOS_PORT || 1400);
-var denonHost = process.env.DENON_HOST;
+var sonos = new Sonos(process.env.SONOS_HOST || '192.168.1.223', process.env.SONOS_PORT || 1400);
+var denonHost = process.env.DENON_HOST ||'192.168.1.198';
 
-var sonosAvrSource = process.env.SONOS_AVR_SOURCE || "MPLAY";
+var sonosAvrSource = process.env.SONOS_AVR_SOURCE || "CD";
 var sonosAvrInputMode = process.env.SONOS_AVR_INPUT || "AUTO";
 var interval = process.env.INTERVAL || 5000;
 
@@ -19,7 +19,11 @@ var avr = new Denon(new Denon.transports.telnet({
     debug: false   // Debug enabled
 }));
 
+console.log('Before connect');
+
 avr.connect();
+
+console.log('after connect');
 
 avr.on('connect', function() {
   console.log('Connected');
@@ -92,7 +96,7 @@ function getCurrentSonosStateCallback(err,track)
       playSonosOnAVR();
     }
   }
-  else
+  else if (isAvrSource(sonosAvrSource)) //only switch input back if we're on the sonos input
   {
     if ( !isAvrInput(originalAvrInputMode) || !isAvrSource(originalAvrSource))
     {
